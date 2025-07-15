@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000"; // fallback for dev
+const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
   const [gemStatus, setGemStatus] = useState('🔍 Waiting...');
+  const [logOutput, setLogOutput] = useState('🔎 Waiting for logs...');
 
   const handleStart = async () => {
     if (!email.trim() || !password.trim()) {
@@ -57,7 +58,7 @@ function App() {
   };
 
   useEffect(() => {
-    const interval = setInterval(async () => {
+    const statusInterval = setInterval(async () => {
       try {
         const response = await fetch(`${API_BASE}/status`);
         const result = await response.json();
@@ -73,7 +74,22 @@ function App() {
       }
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(statusInterval);
+  }, []);
+
+  useEffect(() => {
+    const logInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`${API_BASE}/logs`);
+        const data = await response.json();
+        setLogOutput(data.logs || '📭 No logs yet.');
+      } catch (err) {
+        console.error("Log fetch error:", err);
+        setLogOutput("⚠️ Error fetching logs.");
+      }
+    }, 3000);
+
+    return () => clearInterval(logInterval);
   }, []);
 
   return (
@@ -108,6 +124,21 @@ function App() {
 
       <p>{status}</p>
       <p><strong>Gem Status:</strong> {gemStatus}</p>
+
+      <h3>📋 Live Logs:</h3>
+      <pre
+        style={{
+          background: '#111',
+          color: '#0f0',
+          padding: '10px',
+          borderRadius: '8px',
+          maxHeight: '300px',
+          overflowY: 'scroll',
+          textAlign: 'left',
+        }}
+      >
+        {logOutput}
+      </pre>
     </div>
   );
 }
