@@ -3,12 +3,50 @@ import './App.css';
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
+function LogsViewer() {
+  const [logs, setLogs] = useState("");
+
+  const fetchLogs = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/logs`);
+      const data = await res.json();
+      setLogs(data.logs);
+    } catch (error) {
+      setLogs(`Error fetching logs: ${error.message}`);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+    const interval = setInterval(fetchLogs, 2000); // Fetch logs every 2 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div style={{ marginTop: "2rem" }}>
+      <h2>Server Logs</h2>
+      <textarea
+        value={logs}
+        readOnly
+        style={{
+          width: "100%",
+          height: "300px",
+          fontFamily: "monospace",
+          whiteSpace: "pre-wrap",
+          overflowY: "scroll",
+          border: "1px solid #ccc",
+          padding: "0.5rem",
+        }}
+      />
+    </div>
+  );
+}
+
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('');
   const [gemStatus, setGemStatus] = useState('🔍 Waiting...');
-  const [logOutput, setLogOutput] = useState('🔎 Waiting for logs...');
 
   const handleStart = async () => {
     if (!email.trim() || !password.trim()) {
@@ -58,7 +96,7 @@ function App() {
   };
 
   useEffect(() => {
-    const statusInterval = setInterval(async () => {
+    const interval = setInterval(async () => {
       try {
         const response = await fetch(`${API_BASE}/status`);
         const result = await response.json();
@@ -74,22 +112,7 @@ function App() {
       }
     }, 5000);
 
-    return () => clearInterval(statusInterval);
-  }, []);
-
-  useEffect(() => {
-    const logInterval = setInterval(async () => {
-      try {
-        const response = await fetch(`${API_BASE}/logs`);
-        const data = await response.json();
-        setLogOutput(data.logs || '📭 No logs yet.');
-      } catch (err) {
-        console.error("Log fetch error:", err);
-        setLogOutput("⚠️ Error fetching logs.");
-      }
-    }, 3000);
-
-    return () => clearInterval(logInterval);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -125,20 +148,8 @@ function App() {
       <p>{status}</p>
       <p><strong>Gem Status:</strong> {gemStatus}</p>
 
-      <h3>📋 Live Logs:</h3>
-      <pre
-        style={{
-          background: '#111',
-          color: '#0f0',
-          padding: '10px',
-          borderRadius: '8px',
-          maxHeight: '300px',
-          overflowY: 'scroll',
-          textAlign: 'left',
-        }}
-      >
-        {logOutput}
-      </pre>
+      {/* Logs viewer here */}
+      <LogsViewer />
     </div>
   );
 }
